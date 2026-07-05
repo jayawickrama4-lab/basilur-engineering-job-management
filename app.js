@@ -182,7 +182,8 @@ const elements = {
   revenueMetric: document.querySelector("#revenueMetric"),
   completionMetric: document.querySelector("#completionMetric"),
   jobCountAdmin: document.querySelector("#jobCountAdmin"),
-  technicianCountAdmin: document.querySelector("#technicianCountAdmin")
+  technicianCountAdmin: document.querySelector("#technicianCountAdmin"),
+  jobOnlyActions: document.querySelectorAll(".job-only-action")
 };
 
 function loadJobs() {
@@ -207,8 +208,16 @@ function saveTechnicians() {
 
 function loadEmailRoles() {
   const stored = localStorage.getItem(emailRoleStorageKey);
-  const source = stored ? JSON.parse(stored) : seedEmailRoles;
-  return source.map(normalizeEmailRole);
+  const savedRoles = stored ? JSON.parse(stored) : [];
+  const mergedSeedRoles = seedEmailRoles.map((seedRole) => {
+    const savedRole = savedRoles.find((role) => role.role === seedRole.role);
+    return savedRole ? { ...seedRole, ...savedRole } : seedRole;
+  });
+  const extraSavedRoles = savedRoles.filter(
+    (role) => !seedEmailRoles.some((seedRole) => seedRole.role === role.role)
+  );
+
+  return [...mergedSeedRoles, ...extraSavedRoles].map(normalizeEmailRole);
 }
 
 function saveEmailRoles() {
@@ -582,6 +591,10 @@ function setActiveView(view) {
     item.classList.toggle("active", item.dataset.view === activeView);
   });
 
+  elements.jobOnlyActions.forEach((item) => {
+    item.classList.toggle("is-hidden", activeView !== "jobs");
+  });
+
   elements.sections.forEach((section) => section.classList.add("is-hidden"));
   elements.procurementPanel.classList.remove("is-hidden");
   elements.financePanel.classList.remove("is-hidden");
@@ -644,11 +657,7 @@ function createJob(formData) {
     quoted: Number(formData.get("quoted")) || 0,
     invoice: "Not Ready",
     notes: formData.get("notes") || "No notes added.",
-    tasks: [
-      { label: "Confirm scope with customer", done: false },
-      { label: "Complete site work", done: false },
-      { label: "Prepare service report", done: false }
-    ],
+    tasks: collectTasks(formData),
     parts: collectParts(formData),
     documents: []
   };
@@ -667,6 +676,21 @@ function collectParts(formData) {
       unitPrice: 0
     }))
     .filter((part) => part.name);
+}
+
+function collectTasks(formData) {
+  const tasks = [1, 2, 3]
+    .map((index) => formData.get(`task${index}`)?.trim())
+    .filter(Boolean)
+    .map((label) => ({ label, done: false }));
+
+  return tasks.length
+    ? tasks
+    : [
+        { label: "Confirm scope with contractor", done: false },
+        { label: "Complete outside contractor work", done: false },
+        { label: "Attach invoice and completion approval", done: false }
+      ];
 }
 
 function createTechnician(formData) {

@@ -41,7 +41,7 @@
           <div class="topbar-actions">
             <label class="search-field">
               <span>Search</span>
-              <input id="searchInput" type="search" placeholder="Job, customer, technician" />
+              <input id="searchInput" type="search" placeholder="Job, contractor, technician" />
             </label>
             <button id="addJobButton" class="primary-button" type="button">New Job</button>
           </div>
@@ -80,10 +80,8 @@
               <select id="statusFilter" aria-label="Filter jobs by status">
                 <option value="all">All statuses</option>
                 <option value="New">New</option>
-                <option value="Scheduled">Scheduled</option>
-                <option value="In Progress">In Progress</option>
                 <option value="Waiting Parts">Waiting Parts</option>
-                <option value="Completed">Completed</option>
+                <option value="In Progress">In Progress</option>
               </select>
             </div>
             <div id="jobList" class="job-list" aria-live="polite"></div>
@@ -135,7 +133,7 @@
             <article class="mini-panel">
               <span>Technician master file</span>
               <strong id="technicianCountAdmin">0</strong>
-              <p class="muted">Technician names here appear in the New Job form.</p>
+              <p class="muted">Technician names, emails, and responsibilities appear in jobs and alerts.</p>
             </article>
           </div>
           <div id="masterTechnicianList" class="technician-list"></div>
@@ -150,8 +148,8 @@
           <button class="ghost-button" type="button" id="closeDialogButton">Close</button>
         </div>
         <label>
-          Customer
-          <input name="customer" required placeholder="Customer or site name" />
+          Contractor
+          <input name="customer" required placeholder="Contractor or site name" />
         </label>
         <label>
           Job title
@@ -185,6 +183,10 @@
           <input name="scheduled" type="date" required />
         </label>
         <label>
+          Invoice / quote value
+          <input name="quoted" type="number" min="0" step="1000" placeholder="185000" />
+        </label>
+        <label>
           Notes
           <textarea name="notes" rows="4" placeholder="Problem details, access notes, safety notes"></textarea>
         </label>
@@ -205,6 +207,14 @@
         <label>
           Skill / trade
           <input name="skill" required placeholder="Electrical diagnostics" />
+        </label>
+        <label>
+          Email
+          <input name="email" type="email" required placeholder="technician@basilur.lk" />
+        </label>
+        <label>
+          Responsibility
+          <input name="responsibility" required placeholder="Electrical jobs and service reports" />
         </label>
         <label>
           Availability

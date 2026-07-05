@@ -21,6 +21,7 @@ body {
   margin: 0;
   color: var(--ink);
   background: var(--bg);
+  font-size: 14px;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -38,16 +39,16 @@ button {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: 250px minmax(0, 1fr);
 }
 
 .sidebar {
   background: #122128;
   color: #eef5f3;
-  padding: 24px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 22px;
 }
 
 .brand {
@@ -57,8 +58,8 @@ button {
 }
 
 .brand-mark {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border-radius: 8px;
@@ -84,7 +85,7 @@ button {
 
 .nav-item {
   width: 100%;
-  min-height: 44px;
+  min-height: 40px;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
@@ -119,9 +120,9 @@ button {
 }
 
 .main-content {
-  padding: 28px;
+  padding: 22px;
   display: grid;
-  gap: 22px;
+  gap: 18px;
 }
 
 .topbar,
@@ -142,12 +143,12 @@ p {
 
 h1 {
   margin-bottom: 0;
-  font-size: clamp(1.8rem, 4vw, 2.7rem);
+  font-size: clamp(1.65rem, 3.2vw, 2.25rem);
 }
 
 h2 {
   margin-bottom: 0;
-  font-size: 1.18rem;
+  font-size: 1.05rem;
 }
 
 .search-field {
@@ -173,7 +174,7 @@ textarea {
 .primary-button,
 .ghost-button,
 .danger-button {
-  min-height: 44px;
+  min-height: 38px;
   border-radius: 8px;
   padding: 0 16px;
   border: 1px solid transparent;
@@ -219,8 +220,8 @@ textarea {
 }
 
 .metric-card {
-  min-height: 126px;
-  padding: 18px;
+  min-height: 104px;
+  padding: 14px;
   display: grid;
   gap: 8px;
 }
@@ -231,7 +232,7 @@ textarea {
 }
 
 .metric-card strong {
-  font-size: 2rem;
+  font-size: 1.7rem;
 }
 
 .work-area {
@@ -243,7 +244,7 @@ textarea {
 .jobs-panel,
 .detail-panel,
 .data-panel {
-  padding: 18px;
+  padding: 14px;
 }
 
 .job-list {
@@ -254,8 +255,8 @@ textarea {
 
 .job-card {
   width: 100%;
-  min-height: 96px;
-  padding: 14px;
+  min-height: 84px;
+  padding: 12px;
   border: 1px solid var(--line);
   border-left: 4px solid var(--brand);
   border-radius: 8px;
@@ -330,7 +331,7 @@ textarea {
 }
 
 .detail-grid {
-  margin: 18px 0;
+  margin: 14px 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
@@ -339,7 +340,7 @@ textarea {
 .mini-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 14px;
+  padding: 12px;
   background: var(--surface-strong);
 }
 
@@ -370,6 +371,28 @@ textarea {
   font-weight: 700;
 }
 
+.inline-edit {
+  margin: 0;
+}
+
+.inline-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.inline-input-row button,
+.meta-row button,
+.row-actions button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 34px;
+  padding: 0 10px;
+  font-weight: 800;
+}
+
 .lower-grid {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
@@ -392,6 +415,37 @@ textarea {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.master-input-grid {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(220px, 1fr);
+  gap: 10px;
+}
+
+.master-input-grid label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.technician-edit-row {
+  align-items: flex-end;
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.document-upload {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 4px;
 }
 
 .compact-actions {

@@ -13,7 +13,7 @@
           <div class="brand-mark" aria-hidden="true">BE</div>
           <div>
             <strong>Basilur Engineering</strong>
-            <span>Job Management</span>
+            <span>Maintenance Spend</span>
           </div>
         </div>
 
@@ -25,18 +25,14 @@
           <button class="nav-item" type="button" data-view="master">Master Data</button>
         </nav>
 
-        <section class="sidebar-panel">
-          <span class="panel-label">Today</span>
-          <strong id="todayJobs">0 site visits</strong>
-          <p id="todaySummary">No technician visits scheduled.</p>
-        </section>
       </aside>
 
       <main class="main-content">
         <header class="topbar">
           <div>
             <p class="eyebrow">Operations Console</p>
-            <h1>Engineering job control center</h1>
+            <h1>Engineering expenditure control center</h1>
+            <p class="header-note">Monitor outside contractor maintenance jobs and engineering capital investment spend.</p>
           </div>
           <div class="topbar-actions">
             <label class="search-field">
@@ -49,9 +45,9 @@
 
         <section class="metrics-grid screen-section" data-section="dashboard" aria-label="Job metrics">
           <article class="metric-card">
-            <span>Open jobs</span>
+            <span>Open items</span>
             <strong id="openJobsMetric">0</strong>
-            <small>Active workload</small>
+            <small>Maintenance and CAPEX</small>
           </article>
           <article class="metric-card">
             <span>Urgent</span>
@@ -59,14 +55,14 @@
             <small>High priority</small>
           </article>
           <article class="metric-card">
-            <span>This month</span>
+            <span>Committed spend</span>
             <strong id="revenueMetric">Rs. 0</strong>
-            <small>Quoted value</small>
+            <small>Quote / invoice value</small>
           </article>
           <article class="metric-card">
-            <span>Completion</span>
-            <strong id="completionMetric">0%</strong>
-            <small>Closed jobs</small>
+            <span>Pending quotes</span>
+            <strong id="completionMetric">0</strong>
+            <small>Collecting 3 quotations</small>
           </article>
         </section>
 
@@ -81,6 +77,7 @@
                 <option value="all">All statuses</option>
                 <option value="New">New</option>
                 <option value="Waiting Parts">Waiting Parts</option>
+                <option value="Collecting 3 Quotations">Collecting 3 Quotations</option>
                 <option value="In Progress">In Progress</option>
               </select>
             </div>
@@ -105,7 +102,7 @@
             <div class="section-header">
               <div>
                 <p class="eyebrow">Finance</p>
-                <h2>Invoice status</h2>
+                <h2>Expenditure status</h2>
               </div>
             </div>
             <div id="invoiceList" class="invoice-list"></div>
@@ -133,9 +130,19 @@
             <article class="mini-panel">
               <span>Technician master file</span>
               <strong id="technicianCountAdmin">0</strong>
-              <p class="muted">Technician names, emails, and responsibilities appear in jobs and alerts.</p>
+              <p class="muted">Technician names and responsibilities appear on job cards for completion approval.</p>
+            </article>
+            <article class="mini-panel">
+              <span>Status email matrix</span>
+              <strong>3 rules</strong>
+              <p class="muted">Emails are opened only after the job status changes.</p>
             </article>
           </div>
+          <h2>Email recipients</h2>
+          <div id="emailRoleList" class="technician-list"></div>
+          <h2>Status email matrix</h2>
+          <div id="emailMatrixList" class="routing-list"></div>
+          <h2>Technician approvers</h2>
           <div id="masterTechnicianList" class="technician-list"></div>
         </section>
       </main>
@@ -207,10 +214,6 @@
         <label>
           Skill / trade
           <input name="skill" required placeholder="Electrical diagnostics" />
-        </label>
-        <label>
-          Email
-          <input name="email" type="email" required placeholder="technician@basilur.lk" />
         </label>
         <label>
           Responsibility

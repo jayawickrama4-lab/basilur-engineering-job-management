@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Basilur Engineering Job Management</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">BE</div>
+          <div>
+            <strong>Basilur Engineering</strong>
+            <span>Job Management</span>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Main navigation">
+          <button class="nav-item active" type="button" data-view="dashboard">Dashboard</button>
+          <button class="nav-item" type="button" data-view="jobs">Jobs</button>
+          <button class="nav-item" type="button" data-view="dispatch">Dispatch</button>
+          <button class="nav-item" type="button" data-view="finance">Finance</button>
+        </nav>
+
+        <section class="sidebar-panel">
+          <span class="panel-label">Today</span>
+          <strong id="todayJobs">0 site visits</strong>
+          <p id="todaySummary">No technician visits scheduled.</p>
+        </section>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Operations Console</p>
+            <h1>Engineering job control center</h1>
+          </div>
+          <div class="topbar-actions">
+            <label class="search-field">
+              <span>Search</span>
+              <input id="searchInput" type="search" placeholder="Job, customer, technician" />
+            </label>
+            <button id="addJobButton" class="primary-button" type="button">New Job</button>
+          </div>
+        </header>
+
+        <section class="metrics-grid" aria-label="Job metrics">
+          <article class="metric-card">
+            <span>Open jobs</span>
+            <strong id="openJobsMetric">0</strong>
+            <small>Active workload</small>
+          </article>
+          <article class="metric-card">
+            <span>Urgent</span>
+            <strong id="urgentJobsMetric">0</strong>
+            <small>High priority</small>
+          </article>
+          <article class="metric-card">
+            <span>This month</span>
+            <strong id="revenueMetric">Rs. 0</strong>
+            <small>Quoted value</small>
+          </article>
+          <article class="metric-card">
+            <span>Completion</span>
+            <strong id="completionMetric">0%</strong>
+            <small>Closed jobs</small>
+          </article>
+        </section>
+
+        <section class="work-area">
+          <div class="jobs-panel">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Job Queue</p>
+                <h2>Current work</h2>
+              </div>
+              <select id="statusFilter" aria-label="Filter jobs by status">
+                <option value="all">All statuses</option>
+                <option value="New">New</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Waiting Parts">Waiting Parts</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+            <div id="jobList" class="job-list" aria-live="polite"></div>
+          </div>
+
+          <div class="detail-panel" id="detailPanel"></div>
+        </section>
+
+        <section class="lower-grid">
+          <article class="data-panel">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Dispatch</p>
+                <h2>Technicians</h2>
+              </div>
+            </div>
+            <div id="technicianList" class="technician-list"></div>
+          </article>
+
+          <article class="data-panel">
+            <div class="section-header">
+              <div>
+                <p class="eyebrow">Finance</p>
+                <h2>Invoice status</h2>
+              </div>
+            </div>
+            <div id="invoiceList" class="invoice-list"></div>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="jobDialog" class="job-dialog">
+      <form id="jobForm" method="dialog">
+        <div class="dialog-header">
+          <h2>Create job</h2>
+          <button class="ghost-button" type="button" id="closeDialogButton">Close</button>
+        </div>
+        <label>
+          Customer
+          <input name="customer" required placeholder="Customer or site name" />
+        </label>
+        <label>
+          Job title
+          <input name="title" required placeholder="Repair packaging line motor" />
+        </label>
+        <label>
+          Location
+          <input name="location" required placeholder="Site / plant / city" />
+        </label>
+        <div class="form-grid">
+          <label>
+            Priority
+            <select name="priority">
+              <option>Medium</option>
+              <option>High</option>
+              <option>Low</option>
+            </select>
+          </label>
+          <label>
+            Technician
+            <select name="technician">
+              <option>Nimal Perera</option>
+              <option>Tharindu Silva</option>
+              <option>Ayesha Fernando</option>
+              <option>Ravi Kumar</option>
+            </select>
+          </label>
+        </div>
+        <label>
+          Scheduled date
+          <input name="scheduled" type="date" required />
+        </label>
+        <label>
+          Notes
+          <textarea name="notes" rows="4" placeholder="Problem details, access notes, safety notes"></textarea>
+        </label>
+        <button class="primary-button" type="submit">Create job</button>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>

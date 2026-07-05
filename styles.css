@@ -404,6 +404,11 @@ textarea {
   gap: 8px;
 }
 
+.task-entry-grid {
+  display: grid;
+  gap: 8px;
+}
+
 .part-row {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(140px, 0.6fr) auto auto;

@@ -22,6 +22,7 @@
           <button class="nav-item" type="button" data-view="jobs">Jobs</button>
           <button class="nav-item" type="button" data-view="dispatch">Dispatch</button>
           <button class="nav-item" type="button" data-view="finance">Finance</button>
+          <button class="nav-item" type="button" data-view="master">Master Data</button>
         </nav>
 
         <section class="sidebar-panel">
@@ -46,7 +47,7 @@
           </div>
         </header>
 
-        <section class="metrics-grid" aria-label="Job metrics">
+        <section class="metrics-grid screen-section" data-section="dashboard" aria-label="Job metrics">
           <article class="metric-card">
             <span>Open jobs</span>
             <strong id="openJobsMetric">0</strong>
@@ -69,7 +70,7 @@
           </article>
         </section>
 
-        <section class="work-area">
+        <section class="work-area screen-section" data-section="jobs">
           <div class="jobs-panel">
             <div class="section-header">
               <div>
@@ -91,8 +92,8 @@
           <div class="detail-panel" id="detailPanel"></div>
         </section>
 
-        <section class="lower-grid">
-          <article class="data-panel">
+        <section class="lower-grid screen-section" data-section="operations">
+          <article class="data-panel" data-panel="dispatch">
             <div class="section-header">
               <div>
                 <p class="eyebrow">Dispatch</p>
@@ -102,7 +103,7 @@
             <div id="technicianList" class="technician-list"></div>
           </article>
 
-          <article class="data-panel">
+          <article class="data-panel" data-panel="finance">
             <div class="section-header">
               <div>
                 <p class="eyebrow">Finance</p>
@@ -111,6 +112,33 @@
             </div>
             <div id="invoiceList" class="invoice-list"></div>
           </article>
+        </section>
+
+        <section class="data-panel screen-section is-hidden" data-section="master">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">Admin</p>
+              <h2>Master data and cleanup</h2>
+            </div>
+            <div class="action-row compact-actions">
+              <button id="addTechnicianButton" class="ghost-button" type="button">Add Technician</button>
+              <button id="resetSampleDataButton" class="ghost-button" type="button">Restore Sample Jobs</button>
+              <button id="clearJobsButton" class="danger-button" type="button">Clear All Jobs</button>
+            </div>
+          </div>
+          <div class="admin-grid">
+            <article class="mini-panel">
+              <span>Jobs stored in this browser</span>
+              <strong id="jobCountAdmin">0</strong>
+              <p class="muted">Use Clear All Jobs when you want to remove test jobs and start clean.</p>
+            </article>
+            <article class="mini-panel">
+              <span>Technician master file</span>
+              <strong id="technicianCountAdmin">0</strong>
+              <p class="muted">Technician names here appear in the New Job form.</p>
+            </article>
+          </div>
+          <div id="masterTechnicianList" class="technician-list"></div>
         </section>
       </main>
     </div>
@@ -161,6 +189,31 @@
           <textarea name="notes" rows="4" placeholder="Problem details, access notes, safety notes"></textarea>
         </label>
         <button class="primary-button" type="submit">Create job</button>
+      </form>
+    </dialog>
+
+    <dialog id="technicianDialog" class="job-dialog">
+      <form id="technicianForm" method="dialog">
+        <div class="dialog-header">
+          <h2>Add technician</h2>
+          <button class="ghost-button" type="button" id="closeTechnicianDialogButton">Close</button>
+        </div>
+        <label>
+          Technician name
+          <input name="name" required placeholder="Technician full name" />
+        </label>
+        <label>
+          Skill / trade
+          <input name="skill" required placeholder="Electrical diagnostics" />
+        </label>
+        <label>
+          Availability
+          <select name="status">
+            <option>Available</option>
+            <option>Busy</option>
+          </select>
+        </label>
+        <button class="primary-button" type="submit">Save technician</button>
       </form>
     </dialog>
 

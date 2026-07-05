@@ -3,6 +3,10 @@ const technicianStorageKey = "basilur-engineering-technicians-v1";
 const emailRoleStorageKey = "basilur-engineering-email-roles-v1";
 
 const statusEmailRules = {
+  New: {
+    label: "Job created",
+    roles: ["Procurement", "Finance", "Admin", "Information"]
+  },
   "Waiting Parts": {
     label: "Waiting parts",
     roles: ["Procurement"]
@@ -35,7 +39,11 @@ const seedJobs = [
       { label: "Check belt tension and pulley alignment", done: true },
       { label: "Prepare gearbox service recommendation", done: false }
     ],
-    parts: ["V-belt B72", "Gear oil ISO 220", "Motor mounting bolts"],
+    parts: [
+      { name: "V-belt B72", quantity: 2, unitPrice: 0 },
+      { name: "Gear oil ISO 220", quantity: 1, unitPrice: 0 },
+      { name: "Motor mounting bolts", quantity: 8, unitPrice: 0 }
+    ],
     documents: []
   },
   {
@@ -55,7 +63,11 @@ const seedJobs = [
       { label: "Replace seal kit", done: false },
       { label: "Pressure test and handover", done: false }
     ],
-    parts: ["Mechanical seal 32mm", "Gasket set", "Bearing grease"],
+    parts: [
+      { name: "Mechanical seal 32mm", quantity: 1, unitPrice: 0 },
+      { name: "Gasket set", quantity: 1, unitPrice: 0 },
+      { name: "Bearing grease", quantity: 2, unitPrice: 0 }
+    ],
     documents: []
   },
   {
@@ -75,7 +87,11 @@ const seedJobs = [
       { label: "Order rectifier module", done: false },
       { label: "Final load test", done: false }
     ],
-    parts: ["Rectifier module", "Cooling fan", "Thermal paste"],
+    parts: [
+      { name: "Rectifier module", quantity: 1, unitPrice: 0 },
+      { name: "Cooling fan", quantity: 1, unitPrice: 0 },
+      { name: "Thermal paste", quantity: 1, unitPrice: 0 }
+    ],
     documents: []
   }
 ];
@@ -122,6 +138,11 @@ const seedEmailRoles = [
     role: "Admin",
     email: "admin@basilur.lk",
     responsibility: "Management visibility and document control"
+  },
+  {
+    role: "Information",
+    email: "info@basilur.lk",
+    responsibility: "People who receive job creation alerts for visibility"
   }
 ];
 
@@ -134,14 +155,14 @@ let activeView = "dashboard";
 const elements = {
   navItems: document.querySelectorAll(".nav-item"),
   sections: document.querySelectorAll(".screen-section"),
-  dispatchPanel: document.querySelector('[data-panel="dispatch"]'),
+  procurementPanel: document.querySelector('[data-panel="procurement"]'),
   financePanel: document.querySelector('[data-panel="finance"]'),
   operationsSection: document.querySelector('[data-section="operations"]'),
   searchInput: document.querySelector("#searchInput"),
   statusFilter: document.querySelector("#statusFilter"),
   jobList: document.querySelector("#jobList"),
   detailPanel: document.querySelector("#detailPanel"),
-  technicianList: document.querySelector("#technicianList"),
+  procurementList: document.querySelector("#procurementList"),
   invoiceList: document.querySelector("#invoiceList"),
   masterTechnicianList: document.querySelector("#masterTechnicianList"),
   emailRoleList: document.querySelector("#emailRoleList"),
@@ -214,8 +235,25 @@ function normalizeJob(job) {
     status: statusAliases[job.status] || job.status,
     quoted: Number(job.quoted) || 0,
     invoice: job.invoice || "Not Ready",
+    parts: normalizeParts(job.parts),
     documents: Array.isArray(job.documents) ? job.documents : []
   };
+}
+
+function normalizeParts(parts) {
+  if (!Array.isArray(parts)) return [];
+  return parts
+    .map((part) => {
+      if (typeof part === "string") {
+        return { name: part, quantity: 1, unitPrice: 0 };
+      }
+      return {
+        name: part.name || "",
+        quantity: Number(part.quantity) || 0,
+        unitPrice: Number(part.unitPrice) || 0
+      };
+    })
+    .filter((part) => part.name);
 }
 
 function normalizeTechnician(tech) {
@@ -235,6 +273,10 @@ function normalizeEmailRole(role) {
 
 function money(value) {
   return `Rs. ${value.toLocaleString("en-LK")}`;
+}
+
+function partTotal(part) {
+  return (Number(part.quantity) || 0) * (Number(part.unitPrice) || 0);
 }
 
 function filteredJobs() {
@@ -337,7 +379,28 @@ function renderDetail() {
       .join("")}
 
     <h2>Parts and materials</h2>
-    ${job.parts.map((part) => `<div class="meta-row"><span>${escapeHtml(part)}</span><strong>Required</strong></div>`).join("")}
+    ${
+      job.parts.length
+        ? job.parts
+            .map(
+              (part, index) => `
+                <form class="part-row" data-part-price-form="${index}">
+                  <div>
+                    <strong>${escapeHtml(part.name)}</strong>
+                    <span class="muted">Qty: ${escapeHtml(part.quantity)}</span>
+                  </div>
+                  <label>
+                    Procurement price
+                    <input name="unitPrice" type="number" min="0" step="100" value="${part.unitPrice}" />
+                  </label>
+                  <strong>${money(partTotal(part))}</strong>
+                  <button type="submit">Save</button>
+                </form>
+              `
+            )
+            .join("")
+        : '<p class="empty-state">No parts requested for this job.</p>'
+    }
 
     <h2>Documents</h2>
     <div class="document-upload">
@@ -381,23 +444,27 @@ function renderDetail() {
 }
 
 function renderTechnicians() {
-  if (!technicians.length) {
-    elements.technicianList.innerHTML = '<p class="empty-state">No technicians yet. Add names in Master Data.</p>';
+  const pending = jobs.filter(
+    (job) => job.status === "Waiting Parts" || job.status === "Collecting 3 Quotations" || job.parts.some((part) => !part.unitPrice)
+  );
+
+  if (!pending.length) {
+    elements.procurementList.innerHTML = '<p class="empty-state">No pending procurement jobs.</p>';
     return;
   }
 
-  elements.technicianList.innerHTML = technicians
-    .map((tech) => {
-      const assigned = jobs.filter((job) => job.technician === tech.name && job.status !== "Completed").length;
+  elements.procurementList.innerHTML = pending
+    .map((job) => {
+      const unpriced = job.parts.filter((part) => !part.unitPrice).length;
       return `
         <div class="technician-row">
           <div>
-            <strong>${escapeHtml(tech.name)}</strong>
-            <div class="muted">${escapeHtml(tech.skill)} · ${escapeHtml(tech.responsibility)}</div>
+            <strong>${escapeHtml(job.id)} · ${escapeHtml(job.title)}</strong>
+            <div class="muted">${escapeHtml(job.customer)} · ${escapeHtml(job.status)}</div>
           </div>
           <div class="meta-row-inline">
-            <span class="availability ${tech.status === "Busy" ? "busy" : ""}"></span>
-            <span>${assigned} open</span>
+            <span class="availability busy"></span>
+            <span>${unpriced} unpriced part${unpriced === 1 ? "" : "s"}</span>
           </div>
         </div>
       `;
@@ -419,7 +486,7 @@ function renderInvoices() {
             <strong>${escapeHtml(job.customer)}</strong>
             <div class="muted">${escapeHtml(job.id)} · ${escapeHtml(job.invoice)}</div>
           </div>
-          <span>${money(job.quoted)}</span>
+            <span>${money(job.quoted + job.parts.reduce((sum, part) => sum + partTotal(part), 0))}</span>
         </div>
       `
     )
@@ -469,8 +536,8 @@ function renderEmailRoles() {
             <strong>${escapeHtml(role.role)}</strong>
             <div class="master-input-grid">
               <label>
-                Email
-                <input name="email" type="email" value="${escapeHtml(role.email)}" placeholder="${escapeHtml(role.role.toLowerCase())}@basilur.lk" />
+                Email recipients
+                <input name="email" value="${escapeHtml(role.email)}" placeholder="${escapeHtml(role.role.toLowerCase())}@basilur.lk" />
               </label>
               <label>
                 Responsibility
@@ -516,7 +583,7 @@ function setActiveView(view) {
   });
 
   elements.sections.forEach((section) => section.classList.add("is-hidden"));
-  elements.dispatchPanel.classList.remove("is-hidden");
+  elements.procurementPanel.classList.remove("is-hidden");
   elements.financePanel.classList.remove("is-hidden");
   elements.operationsSection.classList.remove("single-column");
 
@@ -532,7 +599,7 @@ function setActiveView(view) {
     return;
   }
 
-  if (activeView === "dispatch") {
+  if (activeView === "procurement") {
     document.querySelector('[data-section="operations"]').classList.remove("is-hidden");
     elements.financePanel.classList.add("is-hidden");
     elements.operationsSection.classList.add("single-column");
@@ -541,7 +608,7 @@ function setActiveView(view) {
 
   if (activeView === "finance") {
     document.querySelector('[data-section="operations"]').classList.remove("is-hidden");
-    elements.dispatchPanel.classList.add("is-hidden");
+    elements.procurementPanel.classList.add("is-hidden");
     elements.operationsSection.classList.add("single-column");
     return;
   }
@@ -582,13 +649,24 @@ function createJob(formData) {
       { label: "Complete site work", done: false },
       { label: "Prepare service report", done: false }
     ],
-    parts: ["To be confirmed"],
+    parts: collectParts(formData),
     documents: []
   };
 
   jobs = [newJob, ...jobs];
   selectedJobId = newJob.id;
   saveJobs();
+  return newJob;
+}
+
+function collectParts(formData) {
+  return [1, 2, 3]
+    .map((index) => ({
+      name: formData.get(`partName${index}`)?.trim(),
+      quantity: Number(formData.get(`partQty${index}`)) || 0,
+      unitPrice: 0
+    }))
+    .filter((part) => part.name);
 }
 
 function createTechnician(formData) {
@@ -680,8 +758,21 @@ elements.detailPanel.addEventListener("change", (event) => {
 
 elements.detailPanel.addEventListener("submit", (event) => {
   const invoiceForm = event.target.closest("[data-invoice-form]");
-  if (!invoiceForm) return;
+  const partPriceForm = event.target.closest("[data-part-price-form]");
+  if (!invoiceForm && !partPriceForm) return;
   event.preventDefault();
+  if (partPriceForm) {
+    const partIndex = Number(partPriceForm.dataset.partPriceForm);
+    const unitPrice = Number(new FormData(partPriceForm).get("unitPrice")) || 0;
+    jobs = jobs.map((job) => {
+      if (job.id !== selectedJobId) return job;
+      const parts = job.parts.map((part, index) => (index === partIndex ? { ...part, unitPrice } : part));
+      return { ...job, parts };
+    });
+    saveJobs();
+    render();
+    return;
+  }
   const quoted = Number(new FormData(invoiceForm).get("quoted")) || 0;
   jobs = jobs.map((job) => (job.id === selectedJobId ? { ...job, quoted } : job));
   saveJobs();
@@ -702,9 +793,7 @@ function openStatusEmail(job, status) {
   const rule = statusEmailRules[status];
   if (!rule || !job) return;
 
-  const recipients = rule.roles
-    .map((roleName) => emailRoles.find((role) => role.role === roleName)?.email)
-    .filter(Boolean);
+  const recipients = rule.roles.flatMap((roleName) => splitEmails(emailRoles.find((role) => role.role === roleName)?.email));
 
   if (!recipients.length) {
     window.alert("Add email recipients in Master Data before sending this status alert.");
@@ -713,9 +802,16 @@ function openStatusEmail(job, status) {
 
   const subject = encodeURIComponent(`${rule.label}: ${job.id} ${job.title}`);
   const body = encodeURIComponent(
-    `Status changed: ${status}\n\nJob: ${job.id}\nContractor: ${job.customer}\nLocation: ${job.location}\nTechnician approver: ${job.technician}\nQuote / invoice value: ${money(job.quoted)}\n\nNotes:\n${job.notes}\n`
+    `${rule.label}\n\nJob: ${job.id}\nContractor: ${job.customer}\nLocation: ${job.location}\nTechnician approver: ${job.technician}\nQuote / invoice value: ${money(job.quoted)}\nParts requested:\n${job.parts.map((part) => `- ${part.name}: ${part.quantity}`).join("\n") || "No parts requested"}\n\nNotes:\n${job.notes}\n`
   );
   window.location.href = `mailto:${recipients.map((email) => encodeURIComponent(email)).join(",")}?subject=${subject}&body=${body}`;
+}
+
+function splitEmails(value = "") {
+  return value
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
 }
 
 elements.addJobButton.addEventListener("click", () => {
@@ -736,10 +832,11 @@ elements.closeTechnicianDialogButton.addEventListener("click", () => {
 
 elements.jobForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  createJob(new FormData(elements.jobForm));
+  const newJob = createJob(new FormData(elements.jobForm));
   elements.jobForm.reset();
   elements.jobDialog.close();
   render();
+  openStatusEmail(newJob, "New");
 });
 
 elements.technicianForm.addEventListener("submit", (event) => {
@@ -808,7 +905,7 @@ elements.resetSampleDataButton.addEventListener("click", () => {
   jobs = seedJobs.map((job) => ({
     ...job,
     tasks: job.tasks.map((task) => ({ ...task })),
-    parts: [...job.parts],
+    parts: job.parts.map((part) => ({ ...part })),
     documents: [...job.documents]
   }));
   selectedJobId = jobs[0]?.id;

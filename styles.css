@@ -171,7 +171,8 @@ textarea {
 }
 
 .primary-button,
-.ghost-button {
+.ghost-button,
+.danger-button {
   min-height: 44px;
   border-radius: 8px;
   padding: 0 16px;
@@ -192,6 +193,12 @@ textarea {
   background: var(--surface);
   border-color: var(--line);
   color: var(--ink);
+}
+
+.danger-button {
+  background: #fff5f4;
+  border-color: #f3b8b2;
+  color: var(--danger);
 }
 
 .metrics-grid,
@@ -367,9 +374,41 @@ textarea {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
+.lower-grid.single-column {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.is-hidden {
+  display: none !important;
+}
+
 .technician-list,
 .invoice-list {
   margin-top: 12px;
+}
+
+.admin-grid {
+  margin: 16px 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.compact-actions {
+  margin: 0;
+  justify-content: flex-end;
+}
+
+.empty-state {
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+
+.danger-link {
+  border: 0;
+  background: transparent;
+  color: var(--danger);
+  font-weight: 800;
 }
 
 .availability {
@@ -451,7 +490,8 @@ textarea {
   }
 
   .metrics-grid,
-  .detail-grid {
+  .detail-grid,
+  .admin-grid {
     grid-template-columns: 1fr;
   }
 }

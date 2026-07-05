@@ -39,7 +39,7 @@
               <span>Search</span>
               <input id="searchInput" type="search" placeholder="Job, contractor, technician" />
             </label>
-            <button id="addJobButton" class="primary-button" type="button">New Job</button>
+            <button id="addJobButton" class="primary-button job-only-action" type="button">New Job</button>
           </div>
         </header>
 
@@ -199,8 +199,17 @@
           <input name="quoted" type="number" min="0" step="1000" placeholder="185000" />
         </label>
         <fieldset class="parts-fieldset">
+          <legend>Job tasks</legend>
+          <p class="muted">Enter the work steps the contractor or technician must complete.</p>
+          <div class="task-entry-grid">
+            <input name="task1" placeholder="Task 1, e.g. Inspect machine fault" />
+            <input name="task2" placeholder="Task 2, e.g. Collect contractor quotation" />
+            <input name="task3" placeholder="Task 3, e.g. Complete job and attach invoice" />
+          </div>
+        </fieldset>
+        <fieldset class="parts-fieldset">
           <legend>Parts required</legend>
-          <p class="muted">Enter parts now. Procurement can add prices later from the job card.</p>
+          <p class="muted">Enter part names and quantities now. Procurement can add prices later from the job card.</p>
           <div class="parts-entry-grid">
             <input name="partName1" placeholder="Part name" />
             <input name="partQty1" type="number" min="0" step="1" placeholder="Qty" />

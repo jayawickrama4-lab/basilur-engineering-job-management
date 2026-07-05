@@ -20,7 +20,7 @@
         <nav class="nav-list" aria-label="Main navigation">
           <button class="nav-item active" type="button" data-view="dashboard">Dashboard</button>
           <button class="nav-item" type="button" data-view="jobs">Jobs</button>
-          <button class="nav-item" type="button" data-view="dispatch">Dispatch</button>
+          <button class="nav-item" type="button" data-view="procurement">Procurement</button>
           <button class="nav-item" type="button" data-view="finance">Finance</button>
           <button class="nav-item" type="button" data-view="master">Master Data</button>
         </nav>
@@ -88,14 +88,14 @@
         </section>
 
         <section class="lower-grid screen-section" data-section="operations">
-          <article class="data-panel" data-panel="dispatch">
+          <article class="data-panel" data-panel="procurement">
             <div class="section-header">
               <div>
-                <p class="eyebrow">Dispatch</p>
-                <h2>Technicians</h2>
+                <p class="eyebrow">Procurement</p>
+                <h2>Pending parts and quotations</h2>
               </div>
             </div>
-            <div id="technicianList" class="technician-list"></div>
+            <div id="procurementList" class="technician-list"></div>
           </article>
 
           <article class="data-panel" data-panel="finance">
@@ -134,8 +134,13 @@
             </article>
             <article class="mini-panel">
               <span>Status email matrix</span>
-              <strong>3 rules</strong>
-              <p class="muted">Emails are opened only after the job status changes.</p>
+              <strong>4 rules</strong>
+              <p class="muted">Job creation and status emails are opened from the matrix.</p>
+            </article>
+            <article class="mini-panel">
+              <span>Access note</span>
+              <strong>Shared link</strong>
+              <p class="muted">The secretary updates this browser app. View-only access needs login/database in the next version.</p>
             </article>
           </div>
           <h2>Email recipients</h2>
@@ -193,6 +198,18 @@
           Invoice / quote value
           <input name="quoted" type="number" min="0" step="1000" placeholder="185000" />
         </label>
+        <fieldset class="parts-fieldset">
+          <legend>Parts required</legend>
+          <p class="muted">Enter parts now. Procurement can add prices later from the job card.</p>
+          <div class="parts-entry-grid">
+            <input name="partName1" placeholder="Part name" />
+            <input name="partQty1" type="number" min="0" step="1" placeholder="Qty" />
+            <input name="partName2" placeholder="Part name" />
+            <input name="partQty2" type="number" min="0" step="1" placeholder="Qty" />
+            <input name="partName3" placeholder="Part name" />
+            <input name="partQty3" type="number" min="0" step="1" placeholder="Qty" />
+          </div>
+        </fieldset>
         <label>
           Notes
           <textarea name="notes" rows="4" placeholder="Problem details, access notes, safety notes"></textarea>

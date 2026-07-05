@@ -19,14 +19,15 @@ const seedJobs = [
       { label: "Check belt tension and pulley alignment", done: true },
       { label: "Prepare gearbox service recommendation", done: false }
     ],
-    parts: ["V-belt B72", "Gear oil ISO 220", "Motor mounting bolts"]
+    parts: ["V-belt B72", "Gear oil ISO 220", "Motor mounting bolts"],
+    documents: []
   },
   {
     id: "JOB-1002",
     customer: "Ceylon Cold Storage",
     title: "Chiller pump seal replacement",
     location: "Colombo 10",
-    status: "Scheduled",
+    status: "New",
     priority: "Medium",
     technician: "Ayesha Fernando",
     scheduled: "2026-07-07",
@@ -38,7 +39,8 @@ const seedJobs = [
       { label: "Replace seal kit", done: false },
       { label: "Pressure test and handover", done: false }
     ],
-    parts: ["Mechanical seal 32mm", "Gasket set", "Bearing grease"]
+    parts: ["Mechanical seal 32mm", "Gasket set", "Bearing grease"],
+    documents: []
   },
   {
     id: "JOB-1003",
@@ -57,34 +59,40 @@ const seedJobs = [
       { label: "Order rectifier module", done: false },
       { label: "Final load test", done: false }
     ],
-    parts: ["Rectifier module", "Cooling fan", "Thermal paste"]
-  },
-  {
-    id: "JOB-1004",
-    customer: "Nuwara Tea Estate",
-    title: "Dryer exhaust fan vibration",
-    location: "Nuwara Eliya",
-    status: "Completed",
-    priority: "Low",
-    technician: "Ravi Kumar",
-    scheduled: "2026-07-02",
-    quoted: 118000,
-    invoice: "Sent",
-    notes: "Fan bearing replaced and dynamic balance completed. Customer signed job card.",
-    tasks: [
-      { label: "Replace bearing", done: true },
-      { label: "Balance fan wheel", done: true },
-      { label: "Submit service report", done: true }
-    ],
-    parts: ["SKF bearing", "Locking collar", "Vibration report"]
+    parts: ["Rectifier module", "Cooling fan", "Thermal paste"],
+    documents: []
   }
 ];
 
 const seedTechnicians = [
-  { name: "Nimal Perera", skill: "Mechanical drives", status: "Busy" },
-  { name: "Ayesha Fernando", skill: "Pumps and chillers", status: "Available" },
-  { name: "Tharindu Silva", skill: "Electrical diagnostics", status: "Busy" },
-  { name: "Ravi Kumar", skill: "Fabrication and balancing", status: "Available" }
+  {
+    name: "Nimal Perera",
+    skill: "Mechanical drives",
+    status: "Busy",
+    email: "nimal.perera@example.com",
+    responsibility: "Mechanical service jobs and site reports"
+  },
+  {
+    name: "Ayesha Fernando",
+    skill: "Pumps and chillers",
+    status: "Available",
+    email: "ayesha.fernando@example.com",
+    responsibility: "Pump, chiller, and cooling system jobs"
+  },
+  {
+    name: "Tharindu Silva",
+    skill: "Electrical diagnostics",
+    status: "Busy",
+    email: "tharindu.silva@example.com",
+    responsibility: "Electrical faults and control panel checks"
+  },
+  {
+    name: "Ravi Kumar",
+    skill: "Fabrication and balancing",
+    status: "Available",
+    email: "ravi.kumar@example.com",
+    responsibility: "Fabrication, balancing, and workshop support"
+  }
 ];
 
 let jobs = loadJobs();
@@ -127,7 +135,8 @@ const elements = {
 
 function loadJobs() {
   const stored = localStorage.getItem(jobStorageKey);
-  return stored ? JSON.parse(stored) : seedJobs;
+  const source = stored ? JSON.parse(stored) : seedJobs;
+  return source.filter((job) => job.status !== "Completed").map(normalizeJob);
 }
 
 function saveJobs() {
@@ -136,7 +145,8 @@ function saveJobs() {
 
 function loadTechnicians() {
   const stored = localStorage.getItem(technicianStorageKey);
-  return stored ? JSON.parse(stored) : seedTechnicians;
+  const source = stored ? JSON.parse(stored) : seedTechnicians;
+  return source.map(normalizeTechnician);
 }
 
 function saveTechnicians() {
@@ -150,6 +160,28 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function normalizeJob(job) {
+  return {
+    ...job,
+    status: job.status === "Scheduled" ? "New" : job.status,
+    quoted: Number(job.quoted) || 0,
+    invoice: job.invoice || "Not Ready",
+    documents: Array.isArray(job.documents) ? job.documents : []
+  };
+}
+
+function normalizeTechnician(tech) {
+  return {
+    ...tech,
+    email: tech.email || "",
+    responsibility: tech.responsibility || tech.skill || "General engineering service"
+  };
+}
+
+function currentTechnician(job) {
+  return technicians.find((tech) => tech.name === job.technician);
 }
 
 function money(value) {
@@ -235,10 +267,16 @@ function renderDetail() {
     </div>
 
     <div class="detail-grid">
-      <div class="mini-panel"><span>Customer</span><strong>${escapeHtml(job.customer)}</strong></div>
+      <div class="mini-panel"><span>Contractor</span><strong>${escapeHtml(job.customer)}</strong></div>
       <div class="mini-panel"><span>Technician</span><strong>${escapeHtml(job.technician)}</strong></div>
       <div class="mini-panel"><span>Schedule</span><strong>${escapeHtml(job.scheduled)}</strong></div>
-      <div class="mini-panel"><span>Quote</span><strong>${money(job.quoted)}</strong></div>
+      <form class="mini-panel inline-edit" data-invoice-form>
+        <span>Invoice / quote value</span>
+        <div class="inline-input-row">
+          <input name="quoted" type="number" min="0" step="1000" value="${job.quoted}" />
+          <button type="submit">Save</button>
+        </div>
+      </form>
     </div>
 
     <p>${escapeHtml(job.notes)}</p>
@@ -258,8 +296,34 @@ function renderDetail() {
     <h2>Parts and materials</h2>
     ${job.parts.map((part) => `<div class="meta-row"><span>${escapeHtml(part)}</span><strong>Required</strong></div>`).join("")}
 
+    <h2>Documents</h2>
+    <div class="document-upload">
+      <input id="documentUpload" type="file" multiple data-document-upload />
+      <small class="muted">This first version stores document names in this browser. Real file storage needs a database later.</small>
+    </div>
+    ${
+      job.documents.length
+        ? job.documents
+            .map(
+              (doc, index) => `
+                <div class="meta-row">
+                  <span>${escapeHtml(doc.name)}</span>
+                  <button class="danger-link" type="button" data-remove-document="${index}">Remove</button>
+                </div>
+              `
+            )
+            .join("")
+        : '<p class="empty-state">No documents attached.</p>'
+    }
+
+    <h2>Email alert</h2>
+    <div class="meta-row">
+      <span>${escapeHtml(currentTechnician(job)?.email || "No technician email saved")}</span>
+      <button type="button" data-test-email>Test Email</button>
+    </div>
+
     <div class="action-row">
-      ${["New", "Scheduled", "In Progress", "Waiting Parts", "Completed"]
+      ${["New", "Waiting Parts", "In Progress", "Completed"]
         .map((status) => `<button type="button" data-status="${status}">${status}</button>`)
         .join("")}
     </div>
@@ -279,7 +343,7 @@ function renderTechnicians() {
         <div class="technician-row">
           <div>
             <strong>${escapeHtml(tech.name)}</strong>
-            <div class="muted">${escapeHtml(tech.skill)}</div>
+            <div class="muted">${escapeHtml(tech.skill)} · ${escapeHtml(tech.responsibility)}</div>
           </div>
           <div class="meta-row-inline">
             <span class="availability ${tech.status === "Busy" ? "busy" : ""}"></span>
@@ -324,13 +388,25 @@ function renderMasterData() {
   elements.masterTechnicianList.innerHTML = technicians
     .map(
       (tech) => `
-        <div class="technician-row">
+        <form class="technician-row technician-edit-row" data-technician-form="${escapeHtml(tech.name)}">
           <div>
             <strong>${escapeHtml(tech.name)}</strong>
-            <div class="muted">${escapeHtml(tech.skill)} · ${escapeHtml(tech.status)}</div>
+            <div class="master-input-grid">
+              <label>
+                Email
+                <input name="email" type="email" value="${escapeHtml(tech.email)}" placeholder="technician@basilur.lk" />
+              </label>
+              <label>
+                Responsibility
+                <input name="responsibility" value="${escapeHtml(tech.responsibility)}" placeholder="Main responsibility" />
+              </label>
+            </div>
           </div>
-          <button class="danger-link" type="button" data-remove-technician="${escapeHtml(tech.name)}">Remove</button>
-        </div>
+          <div class="row-actions">
+            <button type="submit">Save</button>
+            <button class="danger-link" type="button" data-remove-technician="${escapeHtml(tech.name)}">Remove</button>
+          </div>
+        </form>
       `
     )
     .join("");
@@ -409,7 +485,7 @@ function createJob(formData) {
     priority: formData.get("priority"),
     technician: formData.get("technician"),
     scheduled: formData.get("scheduled"),
-    quoted: 0,
+    quoted: Number(formData.get("quoted")) || 0,
     invoice: "Not Ready",
     notes: formData.get("notes") || "No notes added.",
     tasks: [
@@ -417,7 +493,8 @@ function createJob(formData) {
       { label: "Complete site work", done: false },
       { label: "Prepare service report", done: false }
     ],
-    parts: ["To be confirmed"]
+    parts: ["To be confirmed"],
+    documents: []
   };
 
   jobs = [newJob, ...jobs];
@@ -435,7 +512,9 @@ function createTechnician(formData) {
     {
       name,
       skill: formData.get("skill").trim(),
-      status: formData.get("status")
+      status: formData.get("status"),
+      email: formData.get("email").trim(),
+      responsibility: formData.get("responsibility").trim()
     }
   ];
   saveTechnicians();
@@ -459,7 +538,33 @@ elements.jobList.addEventListener("click", (event) => {
 
 elements.detailPanel.addEventListener("click", (event) => {
   const statusButton = event.target.closest("[data-status]");
+  const emailButton = event.target.closest("[data-test-email]");
+  const removeDocumentButton = event.target.closest("[data-remove-document]");
+
+  if (emailButton) {
+    testEmailAlert();
+    return;
+  }
+
+  if (removeDocumentButton) {
+    const documentIndex = Number(removeDocumentButton.dataset.removeDocument);
+    jobs = jobs.map((job) => {
+      if (job.id !== selectedJobId) return job;
+      return { ...job, documents: job.documents.filter((_, index) => index !== documentIndex) };
+    });
+    saveJobs();
+    render();
+    return;
+  }
+
   if (!statusButton) return;
+  if (statusButton.dataset.status === "Completed") {
+    jobs = jobs.filter((job) => job.id !== selectedJobId);
+    selectedJobId = jobs[0]?.id;
+    saveJobs();
+    render();
+    return;
+  }
   jobs = jobs.map((job) => (job.id === selectedJobId ? { ...job, status: statusButton.dataset.status } : job));
   saveJobs();
   render();
@@ -467,6 +572,12 @@ elements.detailPanel.addEventListener("click", (event) => {
 
 elements.detailPanel.addEventListener("change", (event) => {
   const checkbox = event.target.closest("[data-task-index]");
+  const documentUpload = event.target.closest("[data-document-upload]");
+  if (documentUpload) {
+    addDocuments(documentUpload.files);
+    documentUpload.value = "";
+    return;
+  }
   if (!checkbox) return;
   const taskIndex = Number(checkbox.dataset.taskIndex);
   jobs = jobs.map((job) => {
@@ -477,6 +588,41 @@ elements.detailPanel.addEventListener("change", (event) => {
   saveJobs();
   render();
 });
+
+elements.detailPanel.addEventListener("submit", (event) => {
+  const invoiceForm = event.target.closest("[data-invoice-form]");
+  if (!invoiceForm) return;
+  event.preventDefault();
+  const quoted = Number(new FormData(invoiceForm).get("quoted")) || 0;
+  jobs = jobs.map((job) => (job.id === selectedJobId ? { ...job, quoted } : job));
+  saveJobs();
+  render();
+});
+
+function addDocuments(files) {
+  const documents = Array.from(files).map((file) => ({
+    name: file.name,
+    addedAt: new Date().toISOString()
+  }));
+  jobs = jobs.map((job) => (job.id === selectedJobId ? { ...job, documents: [...job.documents, ...documents] } : job));
+  saveJobs();
+  render();
+}
+
+function testEmailAlert() {
+  const job = jobs.find((item) => item.id === selectedJobId);
+  if (!job) return;
+  const tech = currentTechnician(job);
+  if (!tech?.email) {
+    window.alert("Add an email for this technician in Master Data first.");
+    return;
+  }
+  const subject = encodeURIComponent(`Job alert: ${job.id} ${job.title}`);
+  const body = encodeURIComponent(
+    `Hello ${tech.name},\n\nJob: ${job.id}\nContractor: ${job.customer}\nLocation: ${job.location}\nStatus: ${job.status}\nResponsibility: ${tech.responsibility}\n\nPlease review this job.\n`
+  );
+  window.location.href = `mailto:${encodeURIComponent(tech.email)}?subject=${subject}&body=${body}`;
+}
 
 elements.addJobButton.addEventListener("click", () => {
   elements.jobDialog.showModal();
@@ -518,6 +664,25 @@ elements.masterTechnicianList.addEventListener("click", (event) => {
   render();
 });
 
+elements.masterTechnicianList.addEventListener("submit", (event) => {
+  const technicianForm = event.target.closest("[data-technician-form]");
+  if (!technicianForm) return;
+  event.preventDefault();
+  const formData = new FormData(technicianForm);
+  const technicianName = technicianForm.dataset.technicianForm;
+  technicians = technicians.map((tech) =>
+    tech.name === technicianName
+      ? {
+          ...tech,
+          email: formData.get("email").trim(),
+          responsibility: formData.get("responsibility").trim()
+        }
+      : tech
+  );
+  saveTechnicians();
+  render();
+});
+
 elements.clearJobsButton.addEventListener("click", () => {
   const confirmed = window.confirm("Delete all jobs from this browser? Technician master data will stay.");
   if (!confirmed) return;
@@ -528,7 +693,12 @@ elements.clearJobsButton.addEventListener("click", () => {
 });
 
 elements.resetSampleDataButton.addEventListener("click", () => {
-  jobs = seedJobs.map((job) => ({ ...job, tasks: job.tasks.map((task) => ({ ...task })), parts: [...job.parts] }));
+  jobs = seedJobs.map((job) => ({
+    ...job,
+    tasks: job.tasks.map((task) => ({ ...task })),
+    parts: [...job.parts],
+    documents: [...job.documents]
+  }));
   selectedJobId = jobs[0]?.id;
   saveJobs();
   render();

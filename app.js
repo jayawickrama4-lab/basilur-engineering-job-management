@@ -1,5 +1,21 @@
 const jobStorageKey = "basilur-engineering-jobs-v1";
 const technicianStorageKey = "basilur-engineering-technicians-v1";
+const emailRoleStorageKey = "basilur-engineering-email-roles-v1";
+
+const statusEmailRules = {
+  "Waiting Parts": {
+    label: "Waiting parts",
+    roles: ["Procurement"]
+  },
+  "Collecting 3 Quotations": {
+    label: "Collecting 3 quotations",
+    roles: ["Procurement"]
+  },
+  "In Progress": {
+    label: "Work started",
+    roles: ["Procurement", "Finance", "Admin"]
+  }
+};
 
 const seedJobs = [
   {
@@ -27,7 +43,7 @@ const seedJobs = [
     customer: "Ceylon Cold Storage",
     title: "Chiller pump seal replacement",
     location: "Colombo 10",
-    status: "New",
+    status: "Collecting 3 Quotations",
     priority: "Medium",
     technician: "Ayesha Fernando",
     scheduled: "2026-07-07",
@@ -69,34 +85,49 @@ const seedTechnicians = [
     name: "Nimal Perera",
     skill: "Mechanical drives",
     status: "Busy",
-    email: "nimal.perera@example.com",
     responsibility: "Mechanical service jobs and site reports"
   },
   {
     name: "Ayesha Fernando",
     skill: "Pumps and chillers",
     status: "Available",
-    email: "ayesha.fernando@example.com",
     responsibility: "Pump, chiller, and cooling system jobs"
   },
   {
     name: "Tharindu Silva",
     skill: "Electrical diagnostics",
     status: "Busy",
-    email: "tharindu.silva@example.com",
     responsibility: "Electrical faults and control panel checks"
   },
   {
     name: "Ravi Kumar",
     skill: "Fabrication and balancing",
     status: "Available",
-    email: "ravi.kumar@example.com",
     responsibility: "Fabrication, balancing, and workshop support"
+  }
+];
+
+const seedEmailRoles = [
+  {
+    role: "Procurement",
+    email: "procurement@basilur.lk",
+    responsibility: "Parts, contractor quotations, and purchasing follow-up"
+  },
+  {
+    role: "Finance",
+    email: "finance@basilur.lk",
+    responsibility: "Quotation approval, invoice value, and spend records"
+  },
+  {
+    role: "Admin",
+    email: "admin@basilur.lk",
+    responsibility: "Management visibility and document control"
   }
 ];
 
 let jobs = loadJobs();
 let technicians = loadTechnicians();
+let emailRoles = loadEmailRoles();
 let selectedJobId = jobs[0]?.id;
 let activeView = "dashboard";
 
@@ -113,6 +144,8 @@ const elements = {
   technicianList: document.querySelector("#technicianList"),
   invoiceList: document.querySelector("#invoiceList"),
   masterTechnicianList: document.querySelector("#masterTechnicianList"),
+  emailRoleList: document.querySelector("#emailRoleList"),
+  emailMatrixList: document.querySelector("#emailMatrixList"),
   addJobButton: document.querySelector("#addJobButton"),
   addTechnicianButton: document.querySelector("#addTechnicianButton"),
   resetSampleDataButton: document.querySelector("#resetSampleDataButton"),
@@ -123,8 +156,6 @@ const elements = {
   closeTechnicianDialogButton: document.querySelector("#closeTechnicianDialogButton"),
   jobForm: document.querySelector("#jobForm"),
   technicianForm: document.querySelector("#technicianForm"),
-  todayJobs: document.querySelector("#todayJobs"),
-  todaySummary: document.querySelector("#todaySummary"),
   openJobsMetric: document.querySelector("#openJobsMetric"),
   urgentJobsMetric: document.querySelector("#urgentJobsMetric"),
   revenueMetric: document.querySelector("#revenueMetric"),
@@ -153,6 +184,16 @@ function saveTechnicians() {
   localStorage.setItem(technicianStorageKey, JSON.stringify(technicians));
 }
 
+function loadEmailRoles() {
+  const stored = localStorage.getItem(emailRoleStorageKey);
+  const source = stored ? JSON.parse(stored) : seedEmailRoles;
+  return source.map(normalizeEmailRole);
+}
+
+function saveEmailRoles() {
+  localStorage.setItem(emailRoleStorageKey, JSON.stringify(emailRoles));
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -163,9 +204,14 @@ function escapeHtml(value) {
 }
 
 function normalizeJob(job) {
+  const statusAliases = {
+    Scheduled: "New",
+    "Quotation Prepared": "Collecting 3 Quotations"
+  };
+
   return {
     ...job,
-    status: job.status === "Scheduled" ? "New" : job.status,
+    status: statusAliases[job.status] || job.status,
     quoted: Number(job.quoted) || 0,
     invoice: job.invoice || "Not Ready",
     documents: Array.isArray(job.documents) ? job.documents : []
@@ -175,13 +221,16 @@ function normalizeJob(job) {
 function normalizeTechnician(tech) {
   return {
     ...tech,
-    email: tech.email || "",
     responsibility: tech.responsibility || tech.skill || "General engineering service"
   };
 }
 
-function currentTechnician(job) {
-  return technicians.find((tech) => tech.name === job.technician);
+function normalizeEmailRole(role) {
+  return {
+    ...role,
+    email: role.email || "",
+    responsibility: role.responsibility || "Email notification owner"
+  };
 }
 
 function money(value) {
@@ -204,18 +253,12 @@ function renderMetrics() {
   const open = jobs.filter((job) => job.status !== "Completed").length;
   const urgent = jobs.filter((job) => job.priority === "High" && job.status !== "Completed").length;
   const revenue = jobs.reduce((sum, job) => sum + job.quoted, 0);
-  const completed = jobs.filter((job) => job.status === "Completed").length;
-  const completion = jobs.length ? Math.round((completed / jobs.length) * 100) : 0;
-  const today = jobs.filter((job) => job.scheduled === new Date().toISOString().slice(0, 10));
+  const pendingQuotes = jobs.filter((job) => job.status === "Collecting 3 Quotations").length;
 
   elements.openJobsMetric.textContent = open;
   elements.urgentJobsMetric.textContent = urgent;
   elements.revenueMetric.textContent = money(revenue);
-  elements.completionMetric.textContent = `${completion}%`;
-  elements.todayJobs.textContent = `${today.length} site visit${today.length === 1 ? "" : "s"}`;
-  elements.todaySummary.textContent = today.length
-    ? today.map((job) => `${job.technician}: ${job.customer}`).join(" | ")
-    : "No technician visits scheduled.";
+  elements.completionMetric.textContent = pendingQuotes;
 }
 
 function renderJobList() {
@@ -316,14 +359,21 @@ function renderDetail() {
         : '<p class="empty-state">No documents attached.</p>'
     }
 
-    <h2>Email alert</h2>
-    <div class="meta-row">
-      <span>${escapeHtml(currentTechnician(job)?.email || "No technician email saved")}</span>
-      <button type="button" data-test-email>Test Email</button>
-    </div>
+    <h2>Status email routing</h2>
+    ${Object.entries(statusEmailRules)
+      .map(
+        ([status, rule]) => `
+          <div class="meta-row">
+            <span>${escapeHtml(status)}</span>
+            <strong>${escapeHtml(rule.roles.join(", "))}</strong>
+          </div>
+        `
+      )
+      .join("")}
+    <p class="muted">Emails open only when you change the job status. Technician and superior emails are not used.</p>
 
     <div class="action-row">
-      ${["New", "Waiting Parts", "In Progress", "Completed"]
+      ${["New", "Waiting Parts", "Collecting 3 Quotations", "In Progress", "Completed"]
         .map((status) => `<button type="button" data-status="${status}">${status}</button>`)
         .join("")}
     </div>
@@ -379,6 +429,8 @@ function renderInvoices() {
 function renderMasterData() {
   elements.jobCountAdmin.textContent = jobs.length;
   elements.technicianCountAdmin.textContent = technicians.length;
+  renderEmailRoles();
+  renderEmailMatrix();
 
   if (!technicians.length) {
     elements.masterTechnicianList.innerHTML = '<p class="empty-state">No technicians saved. Click Add Technician.</p>';
@@ -393,10 +445,6 @@ function renderMasterData() {
             <strong>${escapeHtml(tech.name)}</strong>
             <div class="master-input-grid">
               <label>
-                Email
-                <input name="email" type="email" value="${escapeHtml(tech.email)}" placeholder="technician@basilur.lk" />
-              </label>
-              <label>
                 Responsibility
                 <input name="responsibility" value="${escapeHtml(tech.responsibility)}" placeholder="Main responsibility" />
               </label>
@@ -407,6 +455,47 @@ function renderMasterData() {
             <button class="danger-link" type="button" data-remove-technician="${escapeHtml(tech.name)}">Remove</button>
           </div>
         </form>
+      `
+    )
+    .join("");
+}
+
+function renderEmailRoles() {
+  elements.emailRoleList.innerHTML = emailRoles
+    .map(
+      (role) => `
+        <form class="technician-row technician-edit-row" data-email-role-form="${escapeHtml(role.role)}">
+          <div>
+            <strong>${escapeHtml(role.role)}</strong>
+            <div class="master-input-grid">
+              <label>
+                Email
+                <input name="email" type="email" value="${escapeHtml(role.email)}" placeholder="${escapeHtml(role.role.toLowerCase())}@basilur.lk" />
+              </label>
+              <label>
+                Responsibility
+                <input name="responsibility" value="${escapeHtml(role.responsibility)}" placeholder="Main responsibility" />
+              </label>
+            </div>
+          </div>
+          <div class="row-actions">
+            <button type="submit">Save</button>
+          </div>
+        </form>
+      `
+    )
+    .join("");
+}
+
+function renderEmailMatrix() {
+  elements.emailMatrixList.innerHTML = Object.entries(statusEmailRules)
+    .map(
+      ([status, rule]) => `
+        <div class="matrix-row">
+          <strong>${escapeHtml(status)}</strong>
+          <span>${escapeHtml(rule.label)}</span>
+          <span>${escapeHtml(rule.roles.join(", "))}</span>
+        </div>
       `
     )
     .join("");
@@ -513,7 +602,6 @@ function createTechnician(formData) {
       name,
       skill: formData.get("skill").trim(),
       status: formData.get("status"),
-      email: formData.get("email").trim(),
       responsibility: formData.get("responsibility").trim()
     }
   ];
@@ -538,13 +626,7 @@ elements.jobList.addEventListener("click", (event) => {
 
 elements.detailPanel.addEventListener("click", (event) => {
   const statusButton = event.target.closest("[data-status]");
-  const emailButton = event.target.closest("[data-test-email]");
   const removeDocumentButton = event.target.closest("[data-remove-document]");
-
-  if (emailButton) {
-    testEmailAlert();
-    return;
-  }
 
   if (removeDocumentButton) {
     const documentIndex = Number(removeDocumentButton.dataset.removeDocument);
@@ -558,16 +640,23 @@ elements.detailPanel.addEventListener("click", (event) => {
   }
 
   if (!statusButton) return;
-  if (statusButton.dataset.status === "Completed") {
+  const nextStatus = statusButton.dataset.status;
+  if (nextStatus === "Completed") {
     jobs = jobs.filter((job) => job.id !== selectedJobId);
     selectedJobId = jobs[0]?.id;
     saveJobs();
     render();
     return;
   }
-  jobs = jobs.map((job) => (job.id === selectedJobId ? { ...job, status: statusButton.dataset.status } : job));
+  let updatedJob;
+  jobs = jobs.map((job) => {
+    if (job.id !== selectedJobId) return job;
+    updatedJob = { ...job, status: nextStatus };
+    return updatedJob;
+  });
   saveJobs();
   render();
+  openStatusEmail(updatedJob, nextStatus);
 });
 
 elements.detailPanel.addEventListener("change", (event) => {
@@ -609,19 +698,24 @@ function addDocuments(files) {
   render();
 }
 
-function testEmailAlert() {
-  const job = jobs.find((item) => item.id === selectedJobId);
-  if (!job) return;
-  const tech = currentTechnician(job);
-  if (!tech?.email) {
-    window.alert("Add an email for this technician in Master Data first.");
+function openStatusEmail(job, status) {
+  const rule = statusEmailRules[status];
+  if (!rule || !job) return;
+
+  const recipients = rule.roles
+    .map((roleName) => emailRoles.find((role) => role.role === roleName)?.email)
+    .filter(Boolean);
+
+  if (!recipients.length) {
+    window.alert("Add email recipients in Master Data before sending this status alert.");
     return;
   }
-  const subject = encodeURIComponent(`Job alert: ${job.id} ${job.title}`);
+
+  const subject = encodeURIComponent(`${rule.label}: ${job.id} ${job.title}`);
   const body = encodeURIComponent(
-    `Hello ${tech.name},\n\nJob: ${job.id}\nContractor: ${job.customer}\nLocation: ${job.location}\nStatus: ${job.status}\nResponsibility: ${tech.responsibility}\n\nPlease review this job.\n`
+    `Status changed: ${status}\n\nJob: ${job.id}\nContractor: ${job.customer}\nLocation: ${job.location}\nTechnician approver: ${job.technician}\nQuote / invoice value: ${money(job.quoted)}\n\nNotes:\n${job.notes}\n`
   );
-  window.location.href = `mailto:${encodeURIComponent(tech.email)}?subject=${subject}&body=${body}`;
+  window.location.href = `mailto:${recipients.map((email) => encodeURIComponent(email)).join(",")}?subject=${subject}&body=${body}`;
 }
 
 elements.addJobButton.addEventListener("click", () => {
@@ -674,12 +768,30 @@ elements.masterTechnicianList.addEventListener("submit", (event) => {
     tech.name === technicianName
       ? {
           ...tech,
-          email: formData.get("email").trim(),
           responsibility: formData.get("responsibility").trim()
         }
       : tech
   );
   saveTechnicians();
+  render();
+});
+
+elements.emailRoleList.addEventListener("submit", (event) => {
+  const roleForm = event.target.closest("[data-email-role-form]");
+  if (!roleForm) return;
+  event.preventDefault();
+  const formData = new FormData(roleForm);
+  const roleName = roleForm.dataset.emailRoleForm;
+  emailRoles = emailRoles.map((role) =>
+    role.role === roleName
+      ? {
+          ...role,
+          email: formData.get("email").trim(),
+          responsibility: formData.get("responsibility").trim()
+        }
+      : role
+  );
+  saveEmailRoles();
   render();
 });
 

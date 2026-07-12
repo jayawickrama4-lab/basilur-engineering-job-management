@@ -63,8 +63,13 @@ function saveEmailRoleForm(roleForm) {
     ? emailRoles.map((role) => (role.role === roleName ? { ...role, ...nextRole } : role))
     : [...emailRoles, nextRole];
   saveEmailRoles();
-  showSaveFeedback(roleForm);
   render();
+  const updatedForm = Array.from(elements.emailRoleList.querySelectorAll("[data-email-role-form]")).find(
+    (form) => form.dataset.emailRoleForm === roleName
+  );
+  if (updatedForm) {
+    showSaveFeedback(updatedForm);
+  }
 }
 
 function showSaveFeedback(container) {
@@ -356,8 +361,11 @@ elements.detailPanel.addEventListener("submit", (event) => {
     return { ...job, quotations, quoted: selectedQuotationValue({ ...job, quotations }) };
   });
   saveJobs();
-  showSaveFeedback(quotationForm);
   render();
+  const updatedForm = elements.detailPanel.querySelector("[data-quotation-form]");
+  if (updatedForm) {
+    showSaveFeedback(updatedForm);
+  }
 });
 
 document.addEventListener(

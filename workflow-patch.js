@@ -131,7 +131,7 @@ function getSharedDatabasePayload() {
     app: "basilur-engineering-job-management",
     version: 1,
     updatedAt: new Date().toISOString(),
-    jobs,
+    jobs: jobs.filter((job) => job.status !== "Completed"),
     technicians,
     emailRoles
   };
@@ -209,6 +209,11 @@ async function saveSharedDatabase() {
   } catch (error) {
     setSharedDatabaseStatus(error.message, "error");
   }
+}
+
+function saveSharedDatabaseIfConnected() {
+  if (!getSharedDatabaseEndpoint()) return;
+  saveSharedDatabase();
 }
 
 function renderSharedDatabasePanel() {
@@ -290,6 +295,16 @@ document.addEventListener("click", (event) => {
     saveSharedDatabase();
   }
 });
+
+document.addEventListener(
+  "click",
+  (event) => {
+    const completedButton = event.target.closest('[data-status="Completed"]');
+    if (!completedButton) return;
+    window.setTimeout(saveSharedDatabaseIfConnected, 0);
+  },
+  true
+);
 
 function quotationCount(job) {
   return job.quotations.filter((quote) => quote.contractor || quote.value).length;

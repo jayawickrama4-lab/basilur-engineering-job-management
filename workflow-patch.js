@@ -16,6 +16,56 @@ function workflowEnsureQuotations(job) {
   };
 }
 
+function workflowEnsureEmailRoles() {
+  const requiredRoles = [
+    {
+      role: "Procurement",
+      email: "procurement@basilur.lk",
+      responsibility: "Parts, contractor quotations, and purchasing follow-up"
+    },
+    {
+      role: "Finance",
+      email: "finance@basilur.lk",
+      responsibility: "Quotation approval, invoice value, and spend records"
+    },
+    {
+      role: "Admin",
+      email: "admin@basilur.lk",
+      responsibility: "Management visibility and document control"
+    },
+    {
+      role: "Information",
+      email: "info@basilur.lk",
+      responsibility: "People who receive job creation alerts for visibility"
+    }
+  ];
+
+  const mergedRoles = requiredRoles.map((requiredRole) => {
+    const savedRole = emailRoles.find((role) => role.role === requiredRole.role);
+    return savedRole ? { ...requiredRole, ...savedRole } : requiredRole;
+  });
+  const extraRoles = emailRoles.filter((role) => !requiredRoles.some((requiredRole) => requiredRole.role === role.role));
+  emailRoles = [...mergedRoles, ...extraRoles];
+  saveEmailRoles();
+}
+
+function saveEmailRoleForm(roleForm) {
+  const formData = new FormData(roleForm);
+  const roleName = roleForm.dataset.emailRoleForm;
+  const nextRole = {
+    role: roleName,
+    email: formData.get("email").trim(),
+    responsibility: formData.get("responsibility").trim()
+  };
+
+  const existingRole = emailRoles.find((role) => role.role === roleName);
+  emailRoles = existingRole
+    ? emailRoles.map((role) => (role.role === roleName ? { ...role, ...nextRole } : role))
+    : [...emailRoles, nextRole];
+  saveEmailRoles();
+  render();
+}
+
 function quotationCount(job) {
   return job.quotations.filter((quote) => quote.contractor || quote.value).length;
 }
@@ -293,6 +343,19 @@ elements.detailPanel.addEventListener("submit", (event) => {
   render();
 });
 
+elements.emailRoleList.addEventListener(
+  "submit",
+  (event) => {
+    const roleForm = event.target.closest("[data-email-role-form]");
+    if (!roleForm) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    saveEmailRoleForm(roleForm);
+  },
+  true
+);
+
 jobs = jobs.map(workflowEnsureQuotations);
+workflowEnsureEmailRoles();
 saveJobs();
 render();

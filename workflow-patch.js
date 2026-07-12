@@ -115,6 +115,182 @@ function renderEmailRoles() {
     .join("");
 }
 
+const sharedDatabaseEndpointStorageKey = "basilur-engineering-shared-database-url-v1";
+const sharedDatabaseLastSyncStorageKey = "basilur-engineering-shared-database-last-sync-v1";
+const originalSaveJobs = saveJobs;
+const originalSaveTechnicians = saveTechnicians;
+const originalSaveEmailRoles = saveEmailRoles;
+const originalRenderMasterData = renderMasterData;
+
+function getSharedDatabaseEndpoint() {
+  return localStorage.getItem(sharedDatabaseEndpointStorageKey) || "";
+}
+
+function getSharedDatabasePayload() {
+  return {
+    app: "basilur-engineering-job-management",
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    jobs,
+    technicians,
+    emailRoles
+  };
+}
+
+function isFirebaseDatabaseEndpoint(endpoint) {
+  return endpoint.includes("firebaseio.com") || endpoint.includes("firebasedatabase.app");
+}
+
+function setSharedDatabaseStatus(message, type = "info") {
+  const status = document.querySelector("[data-shared-db-status]");
+  if (!status) return;
+  status.textContent = message;
+  status.dataset.statusType = type;
+}
+
+function applySharedDatabasePayload(payload) {
+  const data = payload?.data || payload;
+  if (!data) {
+    throw new Error("The shared database returned no data.");
+  }
+
+  jobs = Array.isArray(data.jobs) ? data.jobs.filter((job) => job.status !== "Completed").map(normalizeJob) : jobs;
+  technicians = Array.isArray(data.technicians) ? data.technicians.map(normalizeTechnician) : technicians;
+  emailRoles = Array.isArray(data.emailRoles) ? data.emailRoles.map(normalizeEmailRole) : emailRoles;
+  selectedJobId = jobs[0]?.id;
+  originalSaveJobs();
+  originalSaveTechnicians();
+  originalSaveEmailRoles();
+}
+
+async function loadSharedDatabase() {
+  const endpoint = getSharedDatabaseEndpoint();
+  if (!endpoint) {
+    setSharedDatabaseStatus("Add the database URL first.", "error");
+    return;
+  }
+
+  setSharedDatabaseStatus("Loading shared data...", "info");
+  try {
+    const response = await fetch(endpoint, { method: "GET" });
+    if (!response.ok) {
+      throw new Error(`Database load failed: ${response.status}`);
+    }
+    const payload = await response.json();
+    applySharedDatabasePayload(payload);
+    localStorage.setItem(sharedDatabaseLastSyncStorageKey, new Date().toISOString());
+    render();
+    setSharedDatabaseStatus("Shared data loaded.", "success");
+  } catch (error) {
+    setSharedDatabaseStatus(error.message, "error");
+  }
+}
+
+async function saveSharedDatabase() {
+  const endpoint = getSharedDatabaseEndpoint();
+  if (!endpoint) {
+    setSharedDatabaseStatus("Add the database URL first.", "error");
+    return;
+  }
+
+  setSharedDatabaseStatus("Saving shared data...", "info");
+  try {
+    const isFirebase = isFirebaseDatabaseEndpoint(endpoint);
+    const response = await fetch(endpoint, {
+      method: isFirebase ? "PUT" : "POST",
+      headers: { "Content-Type": isFirebase ? "application/json" : "text/plain;charset=utf-8" },
+      body: JSON.stringify(getSharedDatabasePayload())
+    });
+    if (!response.ok) {
+      throw new Error(`Database save failed: ${response.status}`);
+    }
+    localStorage.setItem(sharedDatabaseLastSyncStorageKey, new Date().toISOString());
+    setSharedDatabaseStatus("Shared data saved.", "success");
+  } catch (error) {
+    setSharedDatabaseStatus(error.message, "error");
+  }
+}
+
+function renderSharedDatabasePanel() {
+  const masterSection = document.querySelector('[data-section="master"]');
+  if (!masterSection) return;
+
+  let panel = document.querySelector("[data-shared-database-panel]");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.className = "shared-database-panel";
+    panel.dataset.sharedDatabasePanel = "true";
+    const emailHeading = Array.from(masterSection.querySelectorAll("h2")).find((heading) =>
+      heading.textContent.includes("Email recipients")
+    );
+    masterSection.insertBefore(panel, emailHeading || masterSection.firstChild);
+  }
+
+  const endpoint = getSharedDatabaseEndpoint();
+  const lastSync = localStorage.getItem(sharedDatabaseLastSyncStorageKey);
+  panel.innerHTML = `
+    <div class="section-header">
+      <div>
+        <p class="eyebrow">Shared Database</p>
+        <h2>Team data sync</h2>
+      </div>
+      <span class="shared-db-pill">${endpoint ? "Connected" : "Not connected"}</span>
+    </div>
+    <p class="muted">Use this when more than one person must update the same jobs, quotations, parts, and email recipients.</p>
+    <label>
+      Database URL
+      <input data-shared-db-url value="${escapeHtml(endpoint)}" placeholder="Paste Firebase database URL or Google Apps Script URL here" />
+    </label>
+    <div class="action-row compact-actions">
+      <button class="ghost-button" type="button" data-save-shared-db-url>Save URL</button>
+      <button class="ghost-button" type="button" data-load-shared-db>Load Shared Data</button>
+      <button class="primary-button" type="button" data-save-shared-db>Save Shared Data</button>
+    </div>
+    <p class="shared-db-status" data-shared-db-status data-status-type="info">${
+      lastSync ? `Last sync: ${new Date(lastSync).toLocaleString()}` : "Shared database is optional until the URL is added."
+    }</p>
+  `;
+}
+
+saveJobs = function () {
+  originalSaveJobs();
+};
+
+saveTechnicians = function () {
+  originalSaveTechnicians();
+};
+
+saveEmailRoles = function () {
+  originalSaveEmailRoles();
+};
+
+renderMasterData = function () {
+  originalRenderMasterData();
+  renderSharedDatabasePanel();
+};
+
+document.addEventListener("click", (event) => {
+  const saveUrlButton = event.target.closest("[data-save-shared-db-url]");
+  const loadButton = event.target.closest("[data-load-shared-db]");
+  const saveButton = event.target.closest("[data-save-shared-db]");
+
+  if (saveUrlButton) {
+    const input = document.querySelector("[data-shared-db-url]");
+    localStorage.setItem(sharedDatabaseEndpointStorageKey, input.value.trim());
+    renderSharedDatabasePanel();
+    setSharedDatabaseStatus("Database URL saved.", "success");
+    showSaveFeedback(saveUrlButton.parentElement);
+  }
+
+  if (loadButton) {
+    loadSharedDatabase();
+  }
+
+  if (saveButton) {
+    saveSharedDatabase();
+  }
+});
+
 function quotationCount(job) {
   return job.quotations.filter((quote) => quote.contractor || quote.value).length;
 }

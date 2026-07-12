@@ -87,6 +87,34 @@ function showSaveFeedback(container) {
   }, 1600);
 }
 
+function renderEmailRoles() {
+  elements.emailRoleList.innerHTML = emailRoles
+    .map(
+      (role) => `
+        <form class="technician-row technician-edit-row" data-email-role-form="${escapeHtml(role.role)}">
+          <div>
+            <strong>${escapeHtml(role.role)}</strong>
+            <div class="master-input-grid">
+              <label>
+                Email recipients
+                <input name="email" value="${escapeHtml(role.email)}" placeholder="${escapeHtml(role.role.toLowerCase())}@basilur.lk" />
+                <small class="input-help">Use commas for more than one email.</small>
+              </label>
+              <label>
+                Responsibility
+                <input name="responsibility" value="${escapeHtml(role.responsibility)}" placeholder="Main responsibility" />
+              </label>
+            </div>
+          </div>
+          <div class="row-actions">
+            <button type="submit">Save</button>
+          </div>
+        </form>
+      `
+    )
+    .join("");
+}
+
 function quotationCount(job) {
   return job.quotations.filter((quote) => quote.contractor || quote.value).length;
 }

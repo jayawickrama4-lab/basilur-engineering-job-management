@@ -1,0 +1,33 @@
+.quotation-table {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.quotation-row {
+  display: grid;
+  grid-template-columns: 70px minmax(180px, 1fr) 120px;
+  gap: 8px;
+  align-items: center;
+}
+
+.quotation-row span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.quotation-table button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 34px;
+  padding: 0 10px;
+  font-weight: 800;
+}
+
+@media (max-width: 680px) {
+  .quotation-row {
+    grid-template-columns: 1fr;
+  }
+}

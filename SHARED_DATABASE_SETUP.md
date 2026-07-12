@@ -31,6 +31,12 @@ Use the `/basilur-engineering.json` ending for this app.
 
 After that, another user can open the app, paste the same URL, and click **Load Shared Data**.
 
+## Completed Jobs
+
+When a job is marked **Completed**, the app removes that job from the active job list.
+
+When the shared database URL is connected, the app also saves the smaller active list back to the database. This keeps the shared database small because completed jobs are not kept there.
+
 ## Important
 
 This is a simple shared database. It is not a full secure login system yet.

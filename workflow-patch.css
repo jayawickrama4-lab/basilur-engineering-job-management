@@ -26,6 +26,12 @@
   font-weight: 800;
 }
 
+button.save-confirmed {
+  border-color: #1d7f45 !important;
+  background: #1d7f45 !important;
+  color: #ffffff !important;
+}
+
 @media (max-width: 680px) {
   .quotation-row {
     grid-template-columns: 1fr;

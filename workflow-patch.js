@@ -63,7 +63,23 @@ function saveEmailRoleForm(roleForm) {
     ? emailRoles.map((role) => (role.role === roleName ? { ...role, ...nextRole } : role))
     : [...emailRoles, nextRole];
   saveEmailRoles();
+  showSaveFeedback(roleForm);
   render();
+}
+
+function showSaveFeedback(container) {
+  const button = container.querySelector('button[type="submit"], button');
+  if (!button) return;
+
+  const originalText = button.dataset.originalText || button.textContent;
+  button.dataset.originalText = originalText;
+  button.textContent = "Saved";
+  button.classList.add("save-confirmed");
+  window.clearTimeout(Number(button.dataset.saveTimer || 0));
+  button.dataset.saveTimer = window.setTimeout(() => {
+    button.textContent = originalText;
+    button.classList.remove("save-confirmed");
+  }, 1600);
 }
 
 function quotationCount(job) {
@@ -340,8 +356,19 @@ elements.detailPanel.addEventListener("submit", (event) => {
     return { ...job, quotations, quoted: selectedQuotationValue({ ...job, quotations }) };
   });
   saveJobs();
+  showSaveFeedback(quotationForm);
   render();
 });
+
+document.addEventListener(
+  "submit",
+  (event) => {
+    const form = event.target.closest("form");
+    if (!form) return;
+    window.setTimeout(() => showSaveFeedback(form), 0);
+  },
+  true
+);
 
 elements.emailRoleList.addEventListener(
   "submit",
